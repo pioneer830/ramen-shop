@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 
-// import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
@@ -11,6 +11,8 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { Reflector } from 'three/addons/objects/Reflector.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+import { TWEEN } from 'https://unpkg.com/three@0.139.0/examples/jsm/libs/tween.module.min.js';
+
 
 let parent;
 
@@ -32,9 +34,8 @@ const materials = {};
 // create new scene
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-camera.position.z = 5;
-camera.position.y = 2;
-scene.add(camera);
+// camera.position.z = 5;
+// camera.position.y = 2;
 
 // renderer
 const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -54,10 +55,13 @@ scene.add(pointLight);
 
 // orbitControl
 const controls = new OrbitControls(camera, renderer.domElement);
-camera.position.set(-30, 15, 10);
-// camera.lookAt(0.5, 0.5, 0.5);
+controls.target.x = 3;
+controls.target.y = 3;
+controls.target.z = 0;
 
-controls.autoRotate = true;
+camera.position.set(-50, 0, 5);
+
+// controls.autoRotate = true;
 controls.autoRotateSpeed = 1.5;
 controls.zoomSpeed = 1.5;
 controls.enableDamping = true;
@@ -66,7 +70,7 @@ controls.enablePan = true;
 controls.minDistance = 8;
 controls.maxDistance = 20;
 
-controls.maxPolarAngle = Math.PI / 2.1;
+controls.maxPolarAngle = Math.PI / 1.85;
 controls.minPolarAngle = Math.PI / 6;
 
 // controls.target.set(0, 0.1, 0);
@@ -441,7 +445,8 @@ loader.load('assets/ramenShop.gltf', function (gltf) {
     // var poleLightMaterial = new THREE.MeshBasicMaterial({color: '#fff'});
 
     const pngLoader = new THREE.TextureLoader();
-    var poleLightMaterial = new THREE.MeshBasicMaterial({ lightMap: pngLoader.load("assets/texture/lightMatcap.png") });
+    // var poleLightMaterial = new THREE.MeshBasicMaterial({ lightMap: pngLoader.load("assets/texture/lightMatcap.png") });
+    var poleLightMaterial = new THREE.MeshBasicMaterial({ color: "#ffffff" });
 
     // poleLightMaterial.userData.needsBloom = true;
 
@@ -658,9 +663,16 @@ window.addEventListener('click', (e) => {
             // Check if the intersected object has a specific name you are looking for (e.g., 'button')
             if (intersectedObject.name === 'projectsRed') {
                 console.log('Button clicked!');
-                camera.position.z += 1;
-                camera.position.y += 1;
-                camera.position.z += 1;
+                // camera.position.set(10, 0, 10);
+                // new TWEEN.Tween(camera.position)
+                //     .to(
+                //         {
+                //             z: 5,
+                //         },
+                //         500
+                //     )
+                //     .easing(TWEEN.Easing.Cubic.Out)
+                //     .start()
             }
         }
     }
@@ -674,6 +686,8 @@ function animate() {
     requestAnimationFrame(animate);
     renderer.render(scene, camera);
     composer.render();
+    TWEEN.update();
+    
     // finalComposer.render();
 
     // scene.traverse( disposeMaterial );
@@ -714,3 +728,4 @@ function restoreMaterial( obj ) {
 }
 
 animate()
+
