@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 
-import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+// import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
@@ -10,9 +10,24 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { Reflector } from 'three/addons/objects/Reflector.js';
-
+import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 
 let parent;
+
+const BLOOM_SCENE = 1;
+
+// const bloomLayer = new THREE.Layers();
+// bloomLayer.set( BLOOM_SCENE );
+
+const bloomParams = {
+    threshold: 0,
+    strength: 1,
+    radius: 0.8,
+    exposure: 1
+};
+
+const darkMaterial = new THREE.MeshBasicMaterial( { color: 'black' } );
+const materials = {};
 
 // create new scene
 const scene = new THREE.Scene();
@@ -62,11 +77,31 @@ const renderScene = new RenderPass(scene, camera);
 
 // Configurable parameters: (resolution, strength, radius, threshold)
 const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.5, 0.8);
+bloomPass.threshold = bloomParams.threshold;
+bloomPass.strength = bloomParams.strength;
+bloomPass.radius = bloomParams.radius;
 
-const composer = new EffectComposer(renderer);
-composer.addPass(renderScene);
+const composer = new EffectComposer( renderer );
+composer.renderToScreen = false;
+composer.addPass( renderScene );
 // composer.addPass( bloomPass );
 
+const mixPass = new ShaderPass(
+    new THREE.ShaderMaterial( {
+        uniforms: {
+            baseTexture: { value: null },
+            bloomTexture: { value: composer.renderTarget2.texture }
+        },
+        vertexShader: document.getElementById( 'vertexshader' ).textContent,
+        fragmentShader: document.getElementById( 'fragmentshader' ).textContent,
+        defines: {}
+    } ), 'baseTexture'
+);
+mixPass.needsSwap = true;
+
+const finalComposer = new EffectComposer( renderer );
+finalComposer.addPass( renderScene );
+finalComposer.addPass( mixPass );
 
 // texture
 var ktx2Loader = new KTX2Loader();
@@ -80,6 +115,8 @@ window.addEventListener('resize', () => {
     renderer.setSize(width, height);
     camera.aspect = width / height;
     camera.updateProjectionMatrix();
+    composer.setSize( width, height );
+    finalComposer.setSize( width, height );
 })
 
 // shop model
@@ -188,6 +225,7 @@ loader.load('assets/ramenShop.gltf', function (gltf) {
                 texture.material = material;
             }
         })
+        floor.layers.enable(0);
 
     }, function () {
     }, function (e) {
@@ -611,16 +649,68 @@ window.addEventListener('click', (e) => {
     raycaster.setFromCamera(mouse, camera);
     let intersects = raycaster.intersectObjects(scene.children, true);
 
-    intersects.forEach((hit) => {
-        
-        console.log(hit.object.name);
-    })
+    if (intersects.length > 0) {
+        // Loop through the intersects array to find the object(s) you want to handle
+        for (var i = 0; i < intersects.length; i++) {
+            var intersectedObject = intersects[0].object;
+            // console.log(intersectedObject);
+
+            // Check if the intersected object has a specific name you are looking for (e.g., 'button')
+            if (intersectedObject.name === 'projectsRed') {
+                console.log('Button clicked!');
+                camera.position.z += 1;
+                camera.position.y += 1;
+                camera.position.z += 1;
+            }
+        }
+    }
+
+    // intersects.forEach((hit) => {        
+    //     console.log(hit.object.name);
+    // })
 })
 
 function animate() {
     requestAnimationFrame(animate);
-    // renderer.render(scene, camera);
+    renderer.render(scene, camera);
     composer.render();
+    // finalComposer.render();
+
+    // scene.traverse( disposeMaterial );
+    // scene.traverse( darkenNonBloomed );
+    // scene.traverse( restoreMaterial );
+}
+
+function disposeMaterial( obj ) {
+
+    if ( obj.material ) {
+
+        obj.material.dispose();
+
+    }
+
+}
+
+function darkenNonBloomed( obj ) {
+
+    if ( obj.isMesh && bloomLayer.test( obj.layers ) === false ) {
+
+        materials[ obj.uuid ] = obj.material;
+        obj.material = darkMaterial;
+
+    }
+
+}
+
+function restoreMaterial( obj ) {
+
+    if ( materials[ obj.uuid ] ) {
+
+        obj.material = materials[ obj.uuid ];
+        delete materials[ obj.uuid ];
+
+    }
+
 }
 
 animate()
