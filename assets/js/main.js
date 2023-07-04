@@ -17,7 +17,9 @@ import { FocusShader } from 'three/addons/shaders/FocusShader.js';
 import { TWEEN } from 'https://unpkg.com/three@0.139.0/examples/jsm/libs/tween.module.min.js';
 
 
-let parent, scene, effectFocus, mesh;
+let parent, scene, effectFocus, mesh, hologram;
+
+let shop, fan1, fan2;
 
 const BLOOM_SCENE = 1;
 
@@ -156,7 +158,7 @@ loader.setDRACOLoader(dracoLoader);
 
 loader.load('assets/ramenShop.gltf', function (gltf) {
 
-    const shop = gltf.scene;
+    shop = gltf.scene;
 
     // graphicsJoined
     const graphicsJoined = shop.getObjectByName("graphicsJoined", true);
@@ -371,8 +373,8 @@ loader.load('assets/ramenShop.gltf', function (gltf) {
     });
 
     // fans
-    const fan1 = shop.getObjectByName("fan1", true);
-    const fan2 = shop.getObjectByName("fan2", true);
+    fan1 = shop.getObjectByName("fan1", true);
+    fan2 = shop.getObjectByName("fan2", true);
     ktx2Loader.load('assets/texture/fanMatcap.ktx2', function (texture) {
 
         var material = new THREE.MeshStandardMaterial({ map: texture });
@@ -630,22 +632,10 @@ scene.add(parent);
 
 loader1.load('assets/ramenHologram.gltf', function (gltf) {
 
-    const hologram = gltf.scene;
-    // hologram.scale.set(0.023, 0.023, 0.023);
-    // hologram.position.set(0, 5, -1);
-
-    // scene.add(gltf.scene);
-
-    // const scene = gltf.scene;
+    hologram = gltf.scene;
 
     const positions = combineBuffer( hologram, 'position' );
-
     createMesh( positions, scene, 0.023, 0, 5, -1, 0xff7744 );
-    // createMesh( positions, scene, 40.05, - 500, - 350, 600, 0xff7744 );
-
-    
-    // particles.position.set(0, 5, -1);
-    // scene.add(particles);
 
 }, undefined, function (error) {
     console.error(error);
@@ -797,137 +787,142 @@ function createMesh( positions, scene, scale, x, y, z, color ) {
 
 }
 
-animate()
-
+// particle cup
 function render() {
-
+    
     let delta = 10 * clock.getDelta();
-
+    
     delta = delta < 2 ? delta : 2;
-
+    
     // object.rotation.y += - 0.02 * delta;
-    // mesh.rotation.y += - 0.02 * delta;
+    mesh.rotation.y += - 0.02 * delta;
+    
+    // const fan1 = shop.getObjectByName("fan1", true);
+    fan1.rotation.y +=  - 0.2 * delta;
+    fan2.rotation.y +=  - 0.2 * delta;
 
     for ( let j = 0; j < meshes.length; j ++ ) {
-
+        
         const data = meshes[ j ];
         const positions = data.mesh.geometry.attributes.position;
         const initialPositions = data.mesh.geometry.attributes.initialPosition;
-
+        
         const count = positions.count;
-
+        
         if ( data.start > 0 ) {
-
+            
             data.start -= 1;
-
+            
         } else {
 
             if ( data.direction === 0 ) {
-
+                
                 data.direction = - 1;
-
+                
             }
-
+            
         }
-
+        
         for ( let i = 0; i < count; i ++ ) {
-
+            
             const px = positions.getX( i );
             const py = positions.getY( i );
             const pz = positions.getZ( i );
-
+            
             // falling down
             if ( data.direction < 0 ) {
-
+                
                 if ( py > 0 ) {
-
+                    
                     positions.setXYZ(
                         i,
                         px + 1.5 * ( 0.50 - Math.random() ) * data.speed * delta,
                         py + 3.0 * ( 0.25 - Math.random() ) * data.speed * delta,
                         pz + 1.5 * ( 0.50 - Math.random() ) * data.speed * delta
-                    );
-
-                } else {
-
-                    data.verticesDown += 1;
-
-                }
+                        );
+                        
+                    } else {
+                        
+                        data.verticesDown += 1;
+                        
+                    }
 
             }
 
             // rising up
             if ( data.direction > 0 ) {
-
+                
                 const ix = initialPositions.getX( i );
                 const iy = initialPositions.getY( i );
                 const iz = initialPositions.getZ( i );
-
+                
                 const dx = Math.abs( px - ix );
                 const dy = Math.abs( py - iy );
                 const dz = Math.abs( pz - iz );
-
+                
                 const d = dx + dy + dx;
-
+                
                 if ( d > 1 ) {
-
+                    
                     positions.setXYZ(
                         i,
                         px - ( px - ix ) / dx * data.speed * delta * ( 0.85 - Math.random() ),
                         py - ( py - iy ) / dy * data.speed * delta * ( 1 + Math.random() ),
                         pz - ( pz - iz ) / dz * data.speed * delta * ( 0.85 - Math.random() )
-                    );
-
-                } else {
-
-                    data.verticesUp += 1;
-
-                }
-
+                        );
+                        
+                    } else {
+                        
+                        data.verticesUp += 1;
+                        
+                    }
+                    
             }
 
         }
-
+        
         // all vertices down
         if ( data.verticesDown >= count ) {
-
+            
             if ( data.delay <= 0 ) {
-
+                
                 data.direction = 1;
                 data.speed = 5;
                 data.verticesDown = 0;
                 data.delay = 320;
-
+                
             } else {
-
+                
                 data.delay -= 1;
-
+                
             }
-
+            
         }
-
+        
         // all vertices up
         if ( data.verticesUp >= count ) {
-
+            
             if ( data.delay <= 0 ) {
-
+                
                 data.direction = - 1;
                 data.speed = 15;
                 data.verticesUp = 0;
                 data.delay = 120;
-
+                
             } else {
-
+                
                 data.delay -= 1;
-
+                
             }
-
+            
         }
 
         positions.needsUpdate = true;
 
     }
-
+    
     composer.render( 0.01 );
-
+    
 }
+
+animate()
