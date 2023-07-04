@@ -11,12 +11,19 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { Reflector } from 'three/addons/objects/Reflector.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+import { FocusShader } from 'three/addons/shaders/FocusShader.js';
+
+
 import { TWEEN } from 'https://unpkg.com/three@0.139.0/examples/jsm/libs/tween.module.min.js';
 
 
-let parent;
+let parent, scene, effectFocus, mesh;
 
 const BLOOM_SCENE = 1;
+
+const clock = new THREE.Clock();
+
+const meshes = [];
 
 // const bloomLayer = new THREE.Layers();
 // bloomLayer.set( BLOOM_SCENE );
@@ -32,17 +39,24 @@ const darkMaterial = new THREE.MeshBasicMaterial( { color: 'black' } );
 const materials = {};
 
 // create new scene
-const scene = new THREE.Scene();
+scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 // camera.position.z = 5;
 // camera.position.y = 2;
 
+camera.lookAt( scene.position );
+
 // renderer
 const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio( window.devicePixelRatio );
+renderer.setSize( window.innerWidth, window.innerHeight );
+
 renderer.setClearColor("#000");
 
 document.body.appendChild(renderer.domElement);
+
+parent = new THREE.Object3D();
+scene.add( parent );
 
 // ambient light
 var ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
@@ -62,7 +76,7 @@ controls.target.z = 0;
 camera.position.set(-50, 0, 5);
 
 // controls.autoRotate = true;
-controls.autoRotateSpeed = 1.5;
+// controls.autoRotateSpeed = 1.5;
 controls.zoomSpeed = 1.5;
 controls.enableDamping = true;
 controls.enableZoom = true;
@@ -86,26 +100,33 @@ bloomPass.strength = bloomParams.strength;
 bloomPass.radius = bloomParams.radius;
 
 const composer = new EffectComposer( renderer );
+effectFocus = new ShaderPass( FocusShader );
+effectFocus.uniforms[ 'screenWidth' ].value = window.innerWidth * window.devicePixelRatio;
+effectFocus.uniforms[ 'screenHeight' ].value = window.innerHeight * window.devicePixelRatio;
+
 composer.renderToScreen = false;
 composer.addPass( renderScene );
+composer.addPass( effectFocus );
+
 // composer.addPass( bloomPass );
 
-const mixPass = new ShaderPass(
-    new THREE.ShaderMaterial( {
-        uniforms: {
-            baseTexture: { value: null },
-            bloomTexture: { value: composer.renderTarget2.texture }
-        },
-        vertexShader: document.getElementById( 'vertexshader' ).textContent,
-        fragmentShader: document.getElementById( 'fragmentshader' ).textContent,
-        defines: {}
-    } ), 'baseTexture'
-);
-mixPass.needsSwap = true;
+// const mixPass = new ShaderPass(
+//     new THREE.ShaderMaterial( {
+//         uniforms: {
+//             baseTexture: { value: null },
+//             bloomTexture: { value: composer.renderTarget2.texture }
+//         },
+//         vertexShader: document.getElementById( 'vertexshader' ).textContent,
+//         fragmentShader: document.getElementById( 'fragmentshader' ).textContent,
+//         defines: {}
+//     } ), 'baseTexture'
+// );
+// mixPass.needsSwap = true;
 
-const finalComposer = new EffectComposer( renderer );
-finalComposer.addPass( renderScene );
-finalComposer.addPass( mixPass );
+// const finalComposer = new EffectComposer( renderer );
+// finalComposer.addPass( renderScene );
+// finalComposer.addPass( mixPass );
+
 
 // texture
 var ktx2Loader = new KTX2Loader();
@@ -120,7 +141,9 @@ window.addEventListener('resize', () => {
     camera.aspect = width / height;
     camera.updateProjectionMatrix();
     composer.setSize( width, height );
-    finalComposer.setSize( width, height );
+    // finalComposer.setSize( width, height );
+    effectFocus.uniforms[ 'screenWidth' ].value = window.innerWidth * window.devicePixelRatio;
+    effectFocus.uniforms[ 'screenHeight' ].value = window.innerHeight * window.devicePixelRatio;
 })
 
 // shop model
@@ -608,38 +631,21 @@ scene.add(parent);
 loader1.load('assets/ramenHologram.gltf', function (gltf) {
 
     const hologram = gltf.scene;
-    hologram.scale.set(0.023, 0.023, 0.023);
-    hologram.position.set(0, 5, -1);
+    // hologram.scale.set(0.023, 0.023, 0.023);
+    // hologram.position.set(0, 5, -1);
 
     // scene.add(gltf.scene);
 
-    const scene = gltf.scene;
-    // Create a BufferGeometry to hold the particle positions
-    const geometry = new THREE.BufferGeometry();
+    // const scene = gltf.scene;
 
-    // Extract the vertex positions from the glTF model
-    const positions = [];
-    const mesh = scene.children[0]; // Assuming the particles are in the first child object
-    mesh.geometry.getAttribute('position').array.forEach((value) => {
-        positions.push(value);
-    });
+    const positions = combineBuffer( hologram, 'position' );
 
-    // Add the positions array as a Float32 buffer attribute to the geometry
-    geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(positions), 3));
+    createMesh( positions, scene, 0.023, 0, 5, -1, 0xff7744 );
+    // createMesh( positions, scene, 40.05, - 500, - 350, 600, 0xff7744 );
 
-    // Create a material for the particles (e.g., points with a texture)
-    const material = new THREE.PointsMaterial({
-        size: 0.1,
-        // map: YOUR_PARTICLE_TEXTURE,
-        color: 0xfff,
-        transparent: true,
-        blending: THREE.AdditiveBlending,
-    });
-
-    // Create a Points object and add it to the scene
-    const particles = new THREE.Points(geometry, material);
-    particles.position.set(0, 5, -1);
-    scene.add(particles);
+    
+    // particles.position.set(0, 5, -1);
+    // scene.add(particles);
 
 }, undefined, function (error) {
     console.error(error);
@@ -658,7 +664,7 @@ window.addEventListener('click', (e) => {
         // Loop through the intersects array to find the object(s) you want to handle
         for (var i = 0; i < intersects.length; i++) {
             var intersectedObject = intersects[0].object;
-            // console.log(intersectedObject);
+            console.log(intersectedObject);
 
             // Check if the intersected object has a specific name you are looking for (e.g., 'button')
             if (intersectedObject.name === 'projectsRed') {
@@ -687,6 +693,7 @@ function animate() {
     renderer.render(scene, camera);
     composer.render();
     TWEEN.update();
+    render();
     
     // finalComposer.render();
 
@@ -727,5 +734,200 @@ function restoreMaterial( obj ) {
 
 }
 
+function combineBuffer( model, bufferName ) {
+
+    let count = 0;
+
+    model.traverse( function ( child ) {
+
+        if ( child.isMesh ) {
+
+            const buffer = child.geometry.attributes[ bufferName ];
+
+            count += buffer.array.length;
+
+        }
+
+    } );
+
+    const combined = new Float32Array( count );
+
+    let offset = 0;
+
+    model.traverse( function ( child ) {
+
+        if ( child.isMesh ) {
+
+            const buffer = child.geometry.attributes[ bufferName ];
+
+            combined.set( buffer.array, offset );
+            offset += buffer.array.length;
+
+        }
+
+    } );
+
+    return new THREE.BufferAttribute( combined, 3 );
+
+}
+
+function createMesh( positions, scene, scale, x, y, z, color ) {
+
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute( 'position', positions.clone() );
+    geometry.setAttribute( 'initialPosition', positions.clone() );
+
+    geometry.attributes.position.setUsage( THREE.DynamicDrawUsage );
+
+    const clones = [ 0, 0, 0 ];
+
+    mesh = new THREE.Points( geometry, new THREE.PointsMaterial( { size: 0.03, color: "#00F0F0" } ) );
+    mesh.scale.x = mesh.scale.y = mesh.scale.z = scale;
+
+    mesh.position.x = x + clones[ 0 ];
+    mesh.position.y = y + clones[ 1 ];
+    mesh.position.z = z + clones[ 2 ];
+
+    parent.add( mesh );
+
+    meshes.push( {
+        mesh: mesh, verticesDown: 0, verticesUp: 0, direction: 0, speed: 15, delay: Math.floor( 200 + 200 * Math.random() ),
+        start: Math.floor( 100 + 200 * Math.random() ),
+    } );
+
+}
+
 animate()
 
+function render() {
+
+    let delta = 10 * clock.getDelta();
+
+    delta = delta < 2 ? delta : 2;
+
+    // object.rotation.y += - 0.02 * delta;
+    // mesh.rotation.y += - 0.02 * delta;
+
+    for ( let j = 0; j < meshes.length; j ++ ) {
+
+        const data = meshes[ j ];
+        const positions = data.mesh.geometry.attributes.position;
+        const initialPositions = data.mesh.geometry.attributes.initialPosition;
+
+        const count = positions.count;
+
+        if ( data.start > 0 ) {
+
+            data.start -= 1;
+
+        } else {
+
+            if ( data.direction === 0 ) {
+
+                data.direction = - 1;
+
+            }
+
+        }
+
+        for ( let i = 0; i < count; i ++ ) {
+
+            const px = positions.getX( i );
+            const py = positions.getY( i );
+            const pz = positions.getZ( i );
+
+            // falling down
+            if ( data.direction < 0 ) {
+
+                if ( py > 0 ) {
+
+                    positions.setXYZ(
+                        i,
+                        px + 1.5 * ( 0.50 - Math.random() ) * data.speed * delta,
+                        py + 3.0 * ( 0.25 - Math.random() ) * data.speed * delta,
+                        pz + 1.5 * ( 0.50 - Math.random() ) * data.speed * delta
+                    );
+
+                } else {
+
+                    data.verticesDown += 1;
+
+                }
+
+            }
+
+            // rising up
+            if ( data.direction > 0 ) {
+
+                const ix = initialPositions.getX( i );
+                const iy = initialPositions.getY( i );
+                const iz = initialPositions.getZ( i );
+
+                const dx = Math.abs( px - ix );
+                const dy = Math.abs( py - iy );
+                const dz = Math.abs( pz - iz );
+
+                const d = dx + dy + dx;
+
+                if ( d > 1 ) {
+
+                    positions.setXYZ(
+                        i,
+                        px - ( px - ix ) / dx * data.speed * delta * ( 0.85 - Math.random() ),
+                        py - ( py - iy ) / dy * data.speed * delta * ( 1 + Math.random() ),
+                        pz - ( pz - iz ) / dz * data.speed * delta * ( 0.85 - Math.random() )
+                    );
+
+                } else {
+
+                    data.verticesUp += 1;
+
+                }
+
+            }
+
+        }
+
+        // all vertices down
+        if ( data.verticesDown >= count ) {
+
+            if ( data.delay <= 0 ) {
+
+                data.direction = 1;
+                data.speed = 5;
+                data.verticesDown = 0;
+                data.delay = 320;
+
+            } else {
+
+                data.delay -= 1;
+
+            }
+
+        }
+
+        // all vertices up
+        if ( data.verticesUp >= count ) {
+
+            if ( data.delay <= 0 ) {
+
+                data.direction = - 1;
+                data.speed = 15;
+                data.verticesUp = 0;
+                data.delay = 120;
+
+            } else {
+
+                data.delay -= 1;
+
+            }
+
+        }
+
+        positions.needsUpdate = true;
+
+    }
+
+    composer.render( 0.01 );
+
+}
