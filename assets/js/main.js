@@ -10,41 +10,27 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { Reflector } from 'three/addons/objects/Reflector.js';
-import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
-import { FocusShader } from 'three/addons/shaders/FocusShader.js';
-
 
 import { TWEEN } from 'https://unpkg.com/three@0.139.0/examples/jsm/libs/tween.module.min.js';
 
+let parent, scene, mesh = null, hologram, bloomComposer;
 
-let parent, scene, effectFocus, mesh, hologram;
-
-let shop, fan1, fan2;
-
-const BLOOM_SCENE = 1;
+let shop, fan1 = null, fan2 = null, poleLight;
 
 const clock = new THREE.Clock();
 
 const meshes = [];
 
-// const bloomLayer = new THREE.Layers();
-// bloomLayer.set( BLOOM_SCENE );
-
 const bloomParams = {
-    threshold: 0,
-    strength: 1,
-    radius: 0.8,
+    threshold: 0.5,
+    strength: 0.7,
+    radius: 0.2,
     exposure: 1
 };
-
-const darkMaterial = new THREE.MeshBasicMaterial( { color: 'black' } );
-const materials = {};
 
 // create new scene
 scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-// camera.position.z = 5;
-// camera.position.y = 2;
 
 camera.lookAt( scene.position );
 
@@ -52,9 +38,7 @@ camera.lookAt( scene.position );
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setPixelRatio( window.devicePixelRatio );
 renderer.setSize( window.innerWidth, window.innerHeight );
-
 renderer.setClearColor("#000");
-
 document.body.appendChild(renderer.domElement);
 
 parent = new THREE.Object3D();
@@ -71,7 +55,7 @@ scene.add(pointLight);
 
 // orbitControl
 const controls = new OrbitControls(camera, renderer.domElement);
-controls.target.x = 3;
+controls.target.x = 1;
 controls.target.y = 3;
 controls.target.z = 0;
 
@@ -82,53 +66,28 @@ camera.position.set(-50, 0, 5);
 controls.zoomSpeed = 1.5;
 controls.enableDamping = true;
 controls.enableZoom = true;
-controls.enablePan = true;
+controls.enablePan = false;
 controls.minDistance = 8;
 controls.maxDistance = 20;
-
 controls.maxPolarAngle = Math.PI / 1.85;
 controls.minPolarAngle = Math.PI / 6;
 
-// controls.target.set(0, 0.1, 0);
 controls.update();
 
 // postprocessing
-const renderScene = new RenderPass(scene, camera);
+const renderScene = new RenderPass(scene, camera, hologram);
 
 // Configurable parameters: (resolution, strength, radius, threshold)
-const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.5, 0.8);
+const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0, 0.8);
 bloomPass.threshold = bloomParams.threshold;
 bloomPass.strength = bloomParams.strength;
 bloomPass.radius = bloomParams.radius;
 
-const composer = new EffectComposer( renderer );
-effectFocus = new ShaderPass( FocusShader );
-effectFocus.uniforms[ 'screenWidth' ].value = window.innerWidth * window.devicePixelRatio;
-effectFocus.uniforms[ 'screenHeight' ].value = window.innerHeight * window.devicePixelRatio;
+bloomComposer = new EffectComposer( renderer, hologram );
 
-composer.renderToScreen = false;
-composer.addPass( renderScene );
-composer.addPass( effectFocus );
-
-// composer.addPass( bloomPass );
-
-// const mixPass = new ShaderPass(
-//     new THREE.ShaderMaterial( {
-//         uniforms: {
-//             baseTexture: { value: null },
-//             bloomTexture: { value: composer.renderTarget2.texture }
-//         },
-//         vertexShader: document.getElementById( 'vertexshader' ).textContent,
-//         fragmentShader: document.getElementById( 'fragmentshader' ).textContent,
-//         defines: {}
-//     } ), 'baseTexture'
-// );
-// mixPass.needsSwap = true;
-
-// const finalComposer = new EffectComposer( renderer );
-// finalComposer.addPass( renderScene );
-// finalComposer.addPass( mixPass );
-
+// bloomComposer.renderToScreen = false;
+bloomComposer.addPass( renderScene );
+bloomComposer.addPass( bloomPass );
 
 // texture
 var ktx2Loader = new KTX2Loader();
@@ -142,10 +101,10 @@ window.addEventListener('resize', () => {
     renderer.setSize(width, height);
     camera.aspect = width / height;
     camera.updateProjectionMatrix();
-    composer.setSize( width, height );
+    bloomComposer.setSize( width, height );
     // finalComposer.setSize( width, height );
-    effectFocus.uniforms[ 'screenWidth' ].value = window.innerWidth * window.devicePixelRatio;
-    effectFocus.uniforms[ 'screenHeight' ].value = window.innerHeight * window.devicePixelRatio;
+    // effectFocus.uniforms[ 'screenWidth' ].value = window.innerWidth * window.devicePixelRatio;
+    // effectFocus.uniforms[ 'screenHeight' ].value = window.innerHeight * window.devicePixelRatio;
 })
 
 // shop model
@@ -459,25 +418,35 @@ loader.load('assets/ramenShop.gltf', function (gltf) {
 
     // poleLight
 
-    const bloomRenderer = new THREE.WebGLRenderTarget(
-        window.innerWidth,
-        window.innerHeight
-    );
-    bloomPass.renderTarget = bloomRenderer;
+    // const bloomRenderer = new THREE.WebGLRenderTarget(
+    //     window.innerWidth,
+    //     window.innerHeight
+    // );
+    // bloomPass.renderTarget = bloomRenderer;
 
-    const poleLight = shop.getObjectByName("poleLight", true);
+    // var composer = new THREE.EffectComposer(renderer, bloomRenderer);
+    // composer.addPass(bloomRenderer);
+
+    poleLight = shop.getObjectByName("poleLight", true);
     // var chineseMaterial = new THREE.MeshStandardMaterial({color: '#fff'});
     // var poleLightMaterial = new THREE.MeshBasicMaterial({color: '#fff'});
 
-    const pngLoader = new THREE.TextureLoader();
+    // const pngLoader = new THREE.TextureLoader();
     // var poleLightMaterial = new THREE.MeshBasicMaterial({ lightMap: pngLoader.load("assets/texture/lightMatcap.png") });
-    var poleLightMaterial = new THREE.MeshBasicMaterial({ color: "#ffffff" });
+    // var poleLightMaterial = new THREE.MeshStandardMaterial( {
+    //                 color: "#ffffff",
+    //                 metalness: 0.9,
+    //                 roughness: 0.6
+    //         } );
+    const poleLightMaterial = new THREE.MeshBasicMaterial( { color: '#fff' } );
+    // scene.add(poleLightMaterial);
 
     // poleLightMaterial.userData.needsBloom = true;
 
     poleLight.traverse(texture => {
         if (texture.isMesh) {
-            texture.material = poleLightMaterial;
+            texture.material = poleLightMaterial.clone();
+            texture.material.emissiveIntensity = 1.0;
         }
     })
 
@@ -681,47 +650,9 @@ window.addEventListener('click', (e) => {
 function animate() {
     requestAnimationFrame(animate);
     renderer.render(scene, camera);
-    composer.render();
+    bloomComposer.render();
     TWEEN.update();
     render();
-    
-    // finalComposer.render();
-
-    // scene.traverse( disposeMaterial );
-    // scene.traverse( darkenNonBloomed );
-    // scene.traverse( restoreMaterial );
-}
-
-function disposeMaterial( obj ) {
-
-    if ( obj.material ) {
-
-        obj.material.dispose();
-
-    }
-
-}
-
-function darkenNonBloomed( obj ) {
-
-    if ( obj.isMesh && bloomLayer.test( obj.layers ) === false ) {
-
-        materials[ obj.uuid ] = obj.material;
-        obj.material = darkMaterial;
-
-    }
-
-}
-
-function restoreMaterial( obj ) {
-
-    if ( materials[ obj.uuid ] ) {
-
-        obj.material = materials[ obj.uuid ];
-        delete materials[ obj.uuid ];
-
-    }
-
 }
 
 function combineBuffer( model, bufferName ) {
@@ -795,11 +726,14 @@ function render() {
     delta = delta < 2 ? delta : 2;
     
     // object.rotation.y += - 0.02 * delta;
-    mesh.rotation.y += - 0.02 * delta;
+    if(mesh !== null)
+        mesh.rotation.y += - 0.02 * delta;
     
     // const fan1 = shop.getObjectByName("fan1", true);
-    fan1.rotation.y +=  - 0.2 * delta;
-    fan2.rotation.y +=  - 0.2 * delta;
+    if(fan1 !== null)
+        fan1.rotation.y +=  - 0.2 * delta;
+    if(fan2 !== null)
+        fan2.rotation.y +=  - 0.2 * delta;
 
     for ( let j = 0; j < meshes.length; j ++ ) {
         
@@ -920,8 +854,6 @@ function render() {
         positions.needsUpdate = true;
 
     }
-    
-    composer.render( 0.01 );
     
 }
 
