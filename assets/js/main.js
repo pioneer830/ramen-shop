@@ -1,7 +1,5 @@
 import * as THREE from 'three';
 
-import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
-
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
@@ -11,9 +9,9 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { Reflector } from 'three/addons/objects/Reflector.js';
 
-import { TWEEN } from 'https://unpkg.com/three@0.139.0/examples/jsm/libs/tween.module.min.js';
+let parent, scene, mesh = null, hologram, composer;
 
-let parent, scene, mesh = null, hologram, bloomComposer;
+let videoTexture;
 
 let shop, fan1 = null, fan2 = null, poleLight;
 
@@ -22,8 +20,8 @@ const clock = new THREE.Clock();
 const meshes = [];
 
 const bloomParams = {
-    threshold: 0.5,
-    strength: 0.7,
+    threshold: 0,
+    strength: 0.5,
     radius: 0.2,
     exposure: 1
 };
@@ -38,7 +36,7 @@ camera.lookAt( scene.position );
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setPixelRatio( window.devicePixelRatio );
 renderer.setSize( window.innerWidth, window.innerHeight );
-renderer.setClearColor("#000");
+// renderer.setClearColor("#000");
 document.body.appendChild(renderer.domElement);
 
 parent = new THREE.Object3D();
@@ -55,18 +53,18 @@ scene.add(pointLight);
 
 // orbitControl
 const controls = new OrbitControls(camera, renderer.domElement);
-controls.target.x = 1;
+controls.target.x = 0;
 controls.target.y = 3;
 controls.target.z = 0;
 
 camera.position.set(-50, 0, 5);
 
-// controls.autoRotate = true;
+controls.autoRotate = true;
 // controls.autoRotateSpeed = 1.5;
 controls.zoomSpeed = 1.5;
 controls.enableDamping = true;
 controls.enableZoom = true;
-controls.enablePan = false;
+controls.enablePan = true;
 controls.minDistance = 8;
 controls.maxDistance = 20;
 controls.maxPolarAngle = Math.PI / 1.85;
@@ -75,7 +73,7 @@ controls.minPolarAngle = Math.PI / 6;
 controls.update();
 
 // postprocessing
-const renderScene = new RenderPass(scene, camera, hologram);
+const renderScene = new RenderPass(scene, camera);
 
 // Configurable parameters: (resolution, strength, radius, threshold)
 const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0, 0.8);
@@ -83,11 +81,11 @@ bloomPass.threshold = bloomParams.threshold;
 bloomPass.strength = bloomParams.strength;
 bloomPass.radius = bloomParams.radius;
 
-bloomComposer = new EffectComposer( renderer, hologram );
+composer = new EffectComposer( renderer );
 
-// bloomComposer.renderToScreen = false;
-bloomComposer.addPass( renderScene );
-bloomComposer.addPass( bloomPass );
+// composer.renderToScreen = false;
+composer.addPass( renderScene );
+composer.addPass( bloomPass );
 
 // texture
 var ktx2Loader = new KTX2Loader();
@@ -101,10 +99,7 @@ window.addEventListener('resize', () => {
     renderer.setSize(width, height);
     camera.aspect = width / height;
     camera.updateProjectionMatrix();
-    bloomComposer.setSize( width, height );
-    // finalComposer.setSize( width, height );
-    // effectFocus.uniforms[ 'screenWidth' ].value = window.innerWidth * window.devicePixelRatio;
-    // effectFocus.uniforms[ 'screenHeight' ].value = window.innerHeight * window.devicePixelRatio;
+    composer.setSize( width, height );
 })
 
 // shop model
@@ -253,7 +248,7 @@ loader.load('assets/ramenShop.gltf', function (gltf) {
 
     // vendingMachineScreen
     const vendingMachineScreen = shop.getObjectByName("vendingMachineScreen", true);
-    ktx2Loader.load('assets/texture/vendingMachineDefault.ktx2', function (texture) {
+    ktx2Loader.load('assets/texture/vendingMachineMenu.ktx2', function (texture) {
 
         var material = new THREE.MeshStandardMaterial({ map: texture });
         vendingMachineScreen.traverse(texture => {
@@ -398,7 +393,7 @@ loader.load('assets/ramenShop.gltf', function (gltf) {
 
     // arcadeRim
     // var neonMaterial = new THREE.MeshPhongMaterial({color: '#FFFAA3', shininess: 100});
-    var neonMaterial = new THREE.MeshBasicMaterial({ color: '#FFFAA3' });
+    var neonMaterial = new THREE.MeshBasicMaterial({ color: '#94FFFF' });
     const arcadeRim = shop.getObjectByName("arcadeRim", true);
     arcadeRim.traverse(texture => {
         if (texture.isMesh) {
@@ -418,30 +413,9 @@ loader.load('assets/ramenShop.gltf', function (gltf) {
 
     // poleLight
 
-    // const bloomRenderer = new THREE.WebGLRenderTarget(
-    //     window.innerWidth,
-    //     window.innerHeight
-    // );
-    // bloomPass.renderTarget = bloomRenderer;
-
-    // var composer = new THREE.EffectComposer(renderer, bloomRenderer);
-    // composer.addPass(bloomRenderer);
-
     poleLight = shop.getObjectByName("poleLight", true);
-    // var chineseMaterial = new THREE.MeshStandardMaterial({color: '#fff'});
-    // var poleLightMaterial = new THREE.MeshBasicMaterial({color: '#fff'});
-
-    // const pngLoader = new THREE.TextureLoader();
-    // var poleLightMaterial = new THREE.MeshBasicMaterial({ lightMap: pngLoader.load("assets/texture/lightMatcap.png") });
-    // var poleLightMaterial = new THREE.MeshStandardMaterial( {
-    //                 color: "#ffffff",
-    //                 metalness: 0.9,
-    //                 roughness: 0.6
-    //         } );
+   
     const poleLightMaterial = new THREE.MeshBasicMaterial( { color: '#fff' } );
-    // scene.add(poleLightMaterial);
-
-    // poleLightMaterial.userData.needsBloom = true;
 
     poleLight.traverse(texture => {
         if (texture.isMesh) {
@@ -584,6 +558,86 @@ loader.load('assets/ramenShop.gltf', function (gltf) {
             texture.material = storageMaterial;
         }
     })
+    
+    const video = document.getElementById('video');
+    video.playsinline = true;
+    video.loop = true;
+    
+    videoTexture = new THREE.VideoTexture(video);
+    video.play();
+    const material = new THREE.MeshStandardMaterial({ map: videoTexture });
+    
+    // tvScreen
+    const tvScreen = shop.getObjectByName("tvScreen", true);
+    tvScreen.traverse(texture => {
+        if(texture.isMesh) {
+            texture.material = material;
+        }
+    });
+    
+    // littleTVScreen
+    const littleTVScreen = shop.getObjectByName("littleTVScreen", true);
+    littleTVScreen.traverse(texture => {
+        if(texture.isMesh) {
+            texture.material = material;
+        }
+    });
+
+    // tallScreen
+    const tallScreen = shop.getObjectByName("tallScreen", true);
+    tallScreen.traverse(texture => {
+        if(texture.isMesh) {
+            texture.material = material;
+        }
+    });
+
+    // sideScreen
+    const sideScreen = shop.getObjectByName("sideScreen", true);
+    sideScreen.traverse(texture => {
+        if(texture.isMesh) {
+            texture.material = material;
+        }
+    });
+
+    // smallScreen5
+    const smallScreen5 = shop.getObjectByName("smallScreen5", true);
+    smallScreen5.traverse(texture => {
+        if(texture.isMesh) {
+            texture.material = material;
+        }
+    });
+    
+    // smallScreen4
+    const smallScreen4 = shop.getObjectByName("smallScreen4", true);
+    smallScreen4.traverse(texture => {
+        if(texture.isMesh) {
+            texture.material = material;
+        }
+    });
+
+    // smallScreen3
+    const smallScreen3 = shop.getObjectByName("smallScreen3", true);
+    smallScreen3.traverse(texture => {
+        if(texture.isMesh) {
+            texture.material = material;
+        }
+    });
+
+    // smallScreen2
+    const smallScreen2 = shop.getObjectByName("smallScreen2", true);
+    smallScreen2.traverse(texture => {
+        if(texture.isMesh) {
+            texture.material = material;
+        }
+    });
+
+    // smallScreen1
+    const smallScreen1 = shop.getObjectByName("smallScreen1", true);
+    smallScreen1.traverse(texture => {
+        if(texture.isMesh) {
+            texture.material = material;
+        }
+    });
 
     scene.add(gltf.scene);
 
@@ -623,34 +677,91 @@ window.addEventListener('click', (e) => {
         // Loop through the intersects array to find the object(s) you want to handle
         for (var i = 0; i < intersects.length; i++) {
             var intersectedObject = intersects[0].object;
-            console.log(intersectedObject);
 
-            // Check if the intersected object has a specific name you are looking for (e.g., 'button')
             if (intersectedObject.name === 'projectsRed') {
-                console.log('Button clicked!');
-                // camera.position.set(10, 0, 10);
-                // new TWEEN.Tween(camera.position)
-                //     .to(
-                //         {
-                //             z: 5,
-                //         },
-                //         500
-                //     )
-                //     .easing(TWEEN.Easing.Cubic.Out)
-                //     .start()
+                console.log('Project Button clicked!');
+                
+                new TWEEN.Tween(camera.position)
+                    .to(
+                        {
+                            x: 0,
+                            y: 0,
+                            z: 10,
+                        },
+                        3000
+                    )
+                    .easing(TWEEN.Easing.Cubic.Out)
+                    .onUpdate(function() {
+                        controls.update();
+                    })
+                    .onComplete(function() {
+                        // new TWEEN.Tween(controls.position)
+                        //     .to(
+                        //         {
+                        //             z: 2,
+                        //             // y: 0,
+                        //             // z: 0,
+                        //         },
+                        //         3000
+                        //     )
+                        //     .easing(TWEEN.Easing.Cubic.Out)
+                        //     .start()
+                        //     .onUpdate(function() {
+                        //         controls.update();
+                        //     });
+                    })
+                    .start()
+                    ;
+                  
+                
+
+            } else if (intersectedObject.name === 'aboutMeBlue') {
+                console.log('AboutMe Button clicked!');
+                
+                new TWEEN.Tween(camera.position)
+                    .to(
+                        {
+                            x: 0,
+                            y: 0,
+                            z: 10,
+                        },
+                        3000
+                    )
+                    .easing(TWEEN.Easing.Cubic.Out)
+                    .onUpdate(function() {
+                        controls.update();
+                    })
+                    .onComplete(function() {
+                        // new TWEEN.Tween(camera.position)
+                        //     .to(
+                        //         {
+                        //             z: 2,
+                        //             // y: 0,
+                        //             // z: 0,
+                        //         },
+                        //         3000
+                        //     )
+                        //     .easing(TWEEN.Easing.Cubic.Out)
+                        //     .start()
+                        //     .onUpdate(function() {
+                        //         controls.update();
+                        //     });
+                    })
+                    .start()
+                    ;
+                  
+                
+
             }
         }
     }
 
-    // intersects.forEach((hit) => {        
-    //     console.log(hit.object.name);
-    // })
 })
 
 function animate() {
     requestAnimationFrame(animate);
     renderer.render(scene, camera);
-    bloomComposer.render();
+    composer.render();
     TWEEN.update();
     render();
 }

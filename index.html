@@ -6,10 +6,12 @@
 		<link rel="stylesheet" href="assets/css/style.css">
 	</head>
 	<body>
-
+		<video id="video" loop muted crossOrigin="anonymous" playsinline style="display:none">
+			<source src="assets/bunny1.mp4">
+		</video>
 	</body>
 	<script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.7/dat.gui.js"></script>
+	<script src="https://unpkg.com/@tweenjs/tween.js@^20.0.0/dist/tween.umd.js"></script>
 	<script type="importmap">
 	{
 		"imports": {
@@ -17,35 +19,6 @@
 		"three/addons/": "https://cdn.jsdelivr.net/npm/three@0.153.0/examples/jsm/"
 		}
 	}
-	</script>
-
-	<script type="x-shader/x-vertex" id="vertexshader">
-
-		varying vec2 vUv;
-
-		void main() {
-
-			vUv = uv;
-
-			gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
-
-		}
-
-	</script>
-
-	<script type="x-shader/x-fragment" id="fragmentshader">
-
-		uniform sampler2D baseTexture;
-		uniform sampler2D bloomTexture;
-
-		varying vec2 vUv;
-
-		void main() {
-
-			gl_FragColor = ( texture2D( baseTexture, vUv ) + vec4( 1.0 ) * texture2D( bloomTexture, vUv ) );
-
-		}
-
 	</script>
 
 	<script type="module" src="assets/js/main.js"></script>
