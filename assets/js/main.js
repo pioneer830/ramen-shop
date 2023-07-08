@@ -10,6 +10,7 @@ import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 import { Reflector } from 'three/addons/objects/Reflector.js';
 import { SMAAPass } from 'three/addons/postprocessing/SMAAPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 
 let parent, scene, mesh = null, hologram, composer, camera, ktx2Loader, controls;
 
@@ -38,12 +39,32 @@ function init() {
     parent = new THREE.Object3D();
     scene.add(parent);
 
+
+    const testLight = {
+        ambient: 1.0,
+        pointLight: 0.6,
+    };
+    const gui = new GUI();
+    
+    gui.add( testLight, 'ambient', 0.1, 5, 0.02 ).onChange( function ( value ) {
+
+        ambientLight.intensity = value;
+
+    } );
+    
+    gui.add( testLight, 'pointLight', 0.1, 5, 0.02 ).onChange( function ( value ) {
+
+        pointLight.intensity = value;
+
+    } );
+
     // ambient light
     var ambientLight = new THREE.AmbientLight(0xffffff, 0.9);
+    // ambientLight.position.set(0, 5, 0);
     scene.add(ambientLight);
 
     // point light
-    var pointLight = new THREE.PointLight(0xffffff, 1);
+    var pointLight = new THREE.PointLight(0xffffff, 5);
     pointLight.position.set(0, 10, 0);
     scene.add(pointLight);
 
@@ -77,15 +98,29 @@ function init() {
     composer = new EffectComposer(renderer);
     
     const outputPass = new OutputPass( THREE.ReinhardToneMapping );
-    // outputPass.toneMappingExposure = Math.pow( 1, 4.0 );
+    // outputPass.toneMappingExposure = Math.pow( 0.8, 2.0 );
+    outputPass.toneMappingExposure = 0.6688;
 
     composer.addPass(renderScene);
     composer.addPass(bloomPass);
-    composer.addPass(outputPass);
-
+    // composer.addPass(outputPass);
 
     const pass = new SMAAPass(window.innerWidth * renderer.getPixelRatio(), window.innerHeight * renderer.getPixelRatio());
     composer.addPass(pass);
+
+    const params = {
+        threshold: 0,
+        strength: 1,
+        radius: 0,
+        exposure: 0.6688
+    };
+
+    const toneMappingFolder = gui.addFolder( 'tone mapping' );
+    toneMappingFolder.add( params, 'exposure', 0.1, 2 ).onChange( function ( value ) {
+
+        outputPass.toneMappingExposure = Math.pow( value, 4.0 );
+
+    } );
 
     // texture
     ktx2Loader = new KTX2Loader();
@@ -351,9 +386,9 @@ function init() {
         })
 
         // neonBlue
-        // var neonBlueMaterial = new THREE.MeshStandardMaterial({color: '#3CFFFF', shininess: 100});
+        // var neonBlueMaterial = new THREE.MeshPhongMaterial({color: '#3CFFFF', shininess: 10000});
         var neonBlueMaterial = new THREE.MeshBasicMaterial({ color: '#3CFFFF' });
-        neonBlueMaterial.userData.needsBloom = true;
+        // neonBlueMaterial.userData.needsBloom = true;
         const neonBlue = shop.getObjectByName("neonBlue", true);
         neonBlue.traverse(texture => {
             if (texture.isMesh) {
@@ -405,7 +440,7 @@ function init() {
 
         poleLight = shop.getObjectByName("poleLight", true);
 
-        const poleLightMaterial = new THREE.MeshBasicMaterial({ color: '#fff' });
+        const poleLightMaterial = new THREE.MeshBasicMaterial({ color: '#ffffff' });
 
         poleLight.traverse(texture => {
             if (texture.isMesh) {
