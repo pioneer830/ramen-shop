@@ -68,14 +68,6 @@ function init() {
     pointLight.position.set(0, 10, 0);
     scene.add(pointLight);
 
-    var SpotLight = new THREE.SpotLight( 0xffffff, 5, 300, Math.PI/2, 1 );
-    // SpotLight.position.set( 50, 10, 700 );
-    // SpotLight.target.position.set(50, 0, 800);
-    SpotLight.castShadow = true;
-    SpotLight.shadowCameraVisible = false;
-    SpotLight.shadowDarkness = 0.5;
-    scene.add(SpotLight);
-
     // orbitControl
     controls = new OrbitControls(camera, renderer.domElement);
     controls.target.x = 0;
