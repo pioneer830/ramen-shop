@@ -663,7 +663,7 @@ window.addEventListener('resize', () => {
 })
 
 // onclick event
-// window.addEventListener('pointerdown', clickEvent);
+window.addEventListener('pointerdown', clickEvent);
 window.addEventListener('touchend', clickEvent);
 
 function clickEvent(e) {
