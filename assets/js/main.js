@@ -21,6 +21,8 @@ const clock = new THREE.Clock();
 
 const meshes = [];
 
+var creditFlag = 0;
+var vendingFlag = 0;
 init();
 
 function init() {
@@ -28,6 +30,7 @@ function init() {
     scene = new THREE.Scene();
     camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
     camera.lookAt(scene.position);
+    camera.position.set(-40, 0, 0);
 
     // renderer
     renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -53,9 +56,7 @@ function init() {
     controls.target.y = 3;
     controls.target.z = 0;
 
-    camera.position.set(-40, 0, 0);
-
-    controls.autoRotate = true;
+    // controls.autoRotate = true;
     // controls.autoRotateSpeed = 1.5;
     controls.zoomSpeed = 1.5;
     controls.enableDamping = true;
@@ -664,7 +665,7 @@ window.addEventListener('resize', () => {
 
 // onclick event
 window.addEventListener('pointerdown', clickEvent);
-// window.addEventListener('touchend', clickEvent);
+window.addEventListener('touchend', clickEvent);
 
 function clickEvent(e) {
     // onclick event
@@ -677,10 +678,10 @@ function clickEvent(e) {
     if (intersects.length > 0) {
         // Loop through the intersects array to find the object(s) you want to handle
         for (var i = 0; i < intersects.length; i++) {
-            var intersectedObject = intersects[0].object;
+            var intersectedObject = intersects[i].object;
 
-            if (intersectedObject.name === 'projectsWhite' || intersectedObject.name === 'projectsRed') {
-
+            if ((intersectedObject.name === 'projectsWhite' || intersectedObject.name === 'projectsRed') || (intersectedObject.name === 'vendingMachineScreen' && vendingFlag == 0)) {
+                vendingFlag = 1;
                 ktx2Loader.load('assets/texture/vendingMachineMenu.ktx2', function (texture) {
 
                     var material = new THREE.MeshStandardMaterial({ map: texture });
@@ -713,8 +714,8 @@ function clickEvent(e) {
                 new TWEEN.Tween(controls)
                     .to(
                         {
-                            maxDistance: 4.2,
-                            minDistance: 4
+                            maxDistance: 4,
+                            // minDistance: 4
                         },
                         2000
                     )
@@ -744,7 +745,7 @@ function clickEvent(e) {
                     .start()
                     ;
 
-            } else if (intersectedObject.name === 'aboutMeBlack' || intersectedObject.name === 'aboutMeBlue') {
+            } else if (intersectedObject.name === 'aboutMeBlack' || intersectedObject.name === 'aboutMeBlue' || intersectedObject.name === 'about') {
 
                 ktx2Loader.load('assets/texture/bigScreenAbout.ktx2', function (texture) {
 
@@ -793,8 +794,8 @@ function clickEvent(e) {
                 new TWEEN.Tween(controls)
                     .to(
                         {
-                            maxDistance: 2.2,
-                            minDistance: 2.3
+                            maxDistance: 3,
+                            // minDistance: 2.3
                         },
                         2000
                     )
@@ -809,13 +810,14 @@ function clickEvent(e) {
                     .start()
                     ;
 
-            } else if (intersectedObject.name === 'creditsBlack' || intersectedObject.name === 'creditsOrange') {
+            } else if ((intersectedObject.name === 'creditsBlack' || intersectedObject.name === 'creditsOrange') || (intersectedObject.name === 'arcadeScreen' && creditFlag == 0)) {
+                creditFlag = 1;
                 new TWEEN.Tween(camera.position)
                     .to(
                         {
-                            x: 0,
+                            x: -0.5,
                             y: 0,
-                            z: 10,
+                            z: 5,
                         },
                         3000
                     )
@@ -828,23 +830,9 @@ function clickEvent(e) {
                 new TWEEN.Tween(controls.target)
                     .to(
                         {
-                            x: -1,
-                            y: 2.5,
+                            x: -0.8,
+                            y: 2.3,
                             z: 0,
-                        },
-                        3000
-                    )
-                    .easing(TWEEN.Easing.Cubic.Out)
-                    .onUpdate(function () {
-                        controls.update();
-                    })
-                    .start()
-                    ;
-                new TWEEN.Tween(controls)
-                    .to(
-                        {
-                            maxDistance: 4,
-                            minDistance: 2.3
                         },
                         2000
                     )
@@ -853,13 +841,89 @@ function clickEvent(e) {
                         controls.enabled = false;
                         controls.update();
                     })
+                    .start()
+                    ;
+                new TWEEN.Tween(controls)
+                    .to(
+                        {
+                            maxDistance: 3.5,
+                            // minDistance: 4
+                        },
+                        2000
+                    )
+                    .easing(TWEEN.Easing.Cubic.Out)
+                    .onUpdate(function () {
+                        controls.update();
+                    })
                     .onStart(function () {
                         controls.minDistance = 0;
                     })
                     .start()
                     ;
+                
+            } else if (intersectedObject.name === 'arcadeScreen' && creditFlag == 1) {
+                creditFlag = 2;
+                ktx2Loader.load('assets/texture/arcadeScreenCredits.ktx2', function (texture) {
 
-            } else if (intersectedObject.name === 'vendingMachineScreen' || intersectedObject.name === 'bigScreen' || intersectedObject.name === 'arcadeScreen') {
+                    var material = new THREE.MeshStandardMaterial({ map: texture });
+                    arcadeScreen.traverse(texture => {
+                        if (texture.isMesh) {
+                            texture.material = material;
+                        }
+                    })
+
+                }, function () {
+                }, function (e) {
+                    console.error(e);
+                });                
+                    
+            } else if (intersectedObject.name === 'arcadeScreen' && creditFlag == 2) {
+                creditFlag = 3;
+                ktx2Loader.load('assets/texture/arcadeScreenThanks.ktx2', function (texture) {
+
+                    var material = new THREE.MeshStandardMaterial({ map: texture });
+                    arcadeScreen.traverse(texture => {
+                        if (texture.isMesh) {
+                            texture.material = material;
+                        }
+                    })
+
+                }, function () {
+                }, function (e) {
+                    console.error(e);
+                });
+                
+            } else if (intersectedObject.name === 'experience') {
+                ktx2Loader.load('assets/texture/bigScreenExperience.ktx2', function (texture) {
+
+                    var material = new THREE.MeshStandardMaterial({ map: texture });
+                    bigScreen.traverse(texture => {
+                        if (texture.isMesh) {
+                            texture.material = material;
+                        }
+                    })
+
+                }, function () {
+                }, function (e) {
+                    console.error(e);
+                });
+            } else if (intersectedObject.name === 'skill') {
+                ktx2Loader.load('assets/texture/bigScreenSkills.ktx2', function (texture) {
+
+                    var material = new THREE.MeshStandardMaterial({ map: texture });
+                    bigScreen.traverse(texture => {
+                        if (texture.isMesh) {
+                            texture.material = material;
+                        }
+                    })
+
+                }, function () {
+                }, function (e) {
+                    console.error(e);
+                });
+            } else if ((intersectedObject.name === 'vendingMachineScreen' && vendingFlag == 1) || intersectedObject.name === 'back' || (intersectedObject.name === 'arcadeScreen' && creditFlag == 3)) {
+                vendingFlag = 0;
+                creditFlag = 0;
                 new TWEEN.Tween(camera.position)
                     .to(
                         {
@@ -904,7 +968,6 @@ function clickEvent(e) {
                     })
                     .start()
                     ;
-                controls.enabled = true;
                 ktx2Loader.load('assets/texture/vendingMachineDefault.ktx2', function (texture) {
 
                     var material = new THREE.MeshStandardMaterial({ map: texture });
@@ -944,6 +1007,7 @@ function clickEvent(e) {
                 }, function (e) {
                     console.error(e);
                 });
+                controls.enabled = true;
             }
         }
     }
