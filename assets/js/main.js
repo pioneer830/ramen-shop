@@ -23,6 +23,8 @@ const meshes = [];
 
 var creditFlag = 0;
 var vendingFlag = 0;
+var bigscreenFlag = 0;
+
 init();
 
 function init() {
@@ -30,7 +32,7 @@ function init() {
     scene = new THREE.Scene();
     camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
     camera.lookAt(scene.position);
-    camera.position.set(-40, 0, 0);
+    camera.position.set(-15, 5, -7);
 
     // renderer
     renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -677,10 +679,10 @@ function clickEvent(e) {
 
     if (intersects.length > 0) {
         // Loop through the intersects array to find the object(s) you want to handle
-        for (var i = 0; i < intersects.length; i++) {
+        for (var i = 0; i < 2; i++) {
             var intersectedObject = intersects[i].object;
-
-            if ((intersectedObject.name === 'projectsWhite' || intersectedObject.name === 'projectsRed') || (intersectedObject.name === 'vendingMachineScreen' && vendingFlag == 0)) {
+            if ((intersectedObject.name === 'projectsWhite' || intersectedObject.name === 'projectsRed') || (intersectedObject.name === 'vendingMachineScreen' && vendingFlag == 0) || (intersectedObject.name === 'back1' && vendingFlag == 2)){
+                console.log('clicked 1');
                 vendingFlag = 1;
                 ktx2Loader.load('assets/texture/vendingMachineMenu.ktx2', function (texture) {
 
@@ -711,10 +713,26 @@ function clickEvent(e) {
                     })
                     .start()
                     ;
+                new TWEEN.Tween(controls.target)
+                    .to(
+                        {
+                            x: 1.2,
+                            y: 2.2,
+                            z: 0,
+                        },
+                        2000
+                    )
+                    .easing(TWEEN.Easing.Cubic.Out)
+                    .onUpdate(function () {
+                        controls.enabled = false;
+                        controls.update();
+                    })
+                    .start()
+                    ;
                 new TWEEN.Tween(controls)
                     .to(
                         {
-                            maxDistance: 4,
+                            maxDistance: 4.5,
                             // minDistance: 4
                         },
                         2000
@@ -727,26 +745,140 @@ function clickEvent(e) {
                         controls.minDistance = 0;
                     })
                     .start()
-                    ;
-                new TWEEN.Tween(controls.target)
-                    .to(
-                        {
-                            x: 1,
-                            y: 2.1,
-                            z: 0,
-                        },
-                        2000
-                    )
-                    .easing(TWEEN.Easing.Cubic.Out)
-                    .onUpdate(function () {
-                        controls.enabled = false;
-                        controls.update();
+                    ;                
+                return;
+
+            } else if (intersectedObject.name === 'project1' && vendingFlag == 1) {
+                console.log('clicked project1');
+                vendingFlag = 2;
+                ktx2Loader.load('assets/texture/project1.ktx2', function (texture) {
+
+                    var material = new THREE.MeshStandardMaterial({ map: texture });
+                    vendingMachineScreen.traverse(texture => {
+                        if (texture.isMesh) {
+                            texture.material = material;
+                        }
                     })
-                    .start()
-                    ;
 
-            } else if (intersectedObject.name === 'aboutMeBlack' || intersectedObject.name === 'aboutMeBlue' || intersectedObject.name === 'about') {
+                }, function () {
+                }, function (e) {
+                    console.error(e);
+                });
+                return;
+            } else if (intersectedObject.name === 'project2' && vendingFlag == 1) {
+                vendingFlag = 2;
+                ktx2Loader.load('assets/texture/project2.ktx2', function (texture) {
 
+                    var material = new THREE.MeshStandardMaterial({ map: texture });
+                    vendingMachineScreen.traverse(texture => {
+                        if (texture.isMesh) {
+                            texture.material = material;
+                        }
+                    })
+
+                }, function () {
+                }, function (e) {
+                    console.error(e);
+                });
+                return;
+            } else if (intersectedObject.name === 'project3' && vendingFlag == 1) {
+                vendingFlag = 2;
+                ktx2Loader.load('assets/texture/project3.ktx2', function (texture) {
+
+                    var material = new THREE.MeshStandardMaterial({ map: texture });
+                    vendingMachineScreen.traverse(texture => {
+                        if (texture.isMesh) {
+                            texture.material = material;
+                        }
+                    })
+
+                }, function () {
+                }, function (e) {
+                    console.error(e);
+                });
+                return;
+            } else if (intersectedObject.name === 'project4' && vendingFlag == 1) {
+                vendingFlag = 2;
+                ktx2Loader.load('assets/texture/project4.ktx2', function (texture) {
+
+                    var material = new THREE.MeshStandardMaterial({ map: texture });
+                    vendingMachineScreen.traverse(texture => {
+                        if (texture.isMesh) {
+                            texture.material = material;
+                        }
+                    })
+
+                }, function () {
+                }, function (e) {
+                    console.error(e);
+                });
+                return;
+            } else if (intersectedObject.name === 'project5' && vendingFlag == 1) {
+                vendingFlag = 2;
+                ktx2Loader.load('assets/texture/project5.ktx2', function (texture) {
+
+                    var material = new THREE.MeshStandardMaterial({ map: texture });
+                    vendingMachineScreen.traverse(texture => {
+                        if (texture.isMesh) {
+                            texture.material = material;
+                        }
+                    })
+
+                }, function () {
+                }, function (e) {
+                    console.error(e);
+                });
+                return;
+            } else if (intersectedObject.name === 'project6' && vendingFlag == 1) {
+                vendingFlag = 2;
+                ktx2Loader.load('assets/texture/project6.ktx2', function (texture) {
+
+                    var material = new THREE.MeshStandardMaterial({ map: texture });
+                    vendingMachineScreen.traverse(texture => {
+                        if (texture.isMesh) {
+                            texture.material = material;
+                        }
+                    })
+
+                }, function () {
+                }, function (e) {
+                    console.error(e);
+                });
+                return;
+            } else if (intersectedObject.name === 'project7' && vendingFlag == 1) {
+                vendingFlag = 2;
+                ktx2Loader.load('assets/texture/project7.ktx2', function (texture) {
+
+                    var material = new THREE.MeshStandardMaterial({ map: texture });
+                    vendingMachineScreen.traverse(texture => {
+                        if (texture.isMesh) {
+                            texture.material = material;
+                        }
+                    })
+
+                }, function () {
+                }, function (e) {
+                    console.error(e);
+                });
+                return;
+            } else if (intersectedObject.name === 'project8' && vendingFlag == 1) {
+                vendingFlag = 2;
+                ktx2Loader.load('assets/texture/project8.ktx2', function (texture) {
+
+                    var material = new THREE.MeshStandardMaterial({ map: texture });
+                    vendingMachineScreen.traverse(texture => {
+                        if (texture.isMesh) {
+                            texture.material = material;
+                        }
+                    })
+
+                }, function () {
+                }, function (e) {
+                    console.error(e);
+                });
+                return;
+            } else if (intersectedObject.name === 'aboutMeBlack' || intersectedObject.name === 'aboutMeBlue' || intersectedObject.name === 'about' || (intersectedObject.name === 'bigScreen' && bigscreenFlag == 0)) {
+                bigscreenFlag = 1;
                 ktx2Loader.load('assets/texture/bigScreenAbout.ktx2', function (texture) {
 
                     var material = new THREE.MeshStandardMaterial({ map: texture });
@@ -809,6 +941,7 @@ function clickEvent(e) {
                     })
                     .start()
                     ;
+                    return;
 
             } else if ((intersectedObject.name === 'creditsBlack' || intersectedObject.name === 'creditsOrange') || (intersectedObject.name === 'arcadeScreen' && creditFlag == 0)) {
                 creditFlag = 1;
@@ -860,6 +993,7 @@ function clickEvent(e) {
                     })
                     .start()
                     ;
+                    return;
                 
             } else if (intersectedObject.name === 'arcadeScreen' && creditFlag == 1) {
                 creditFlag = 2;
@@ -875,7 +1009,8 @@ function clickEvent(e) {
                 }, function () {
                 }, function (e) {
                     console.error(e);
-                });                
+                });   
+                return;             
                     
             } else if (intersectedObject.name === 'arcadeScreen' && creditFlag == 2) {
                 creditFlag = 3;
@@ -892,6 +1027,7 @@ function clickEvent(e) {
                 }, function (e) {
                     console.error(e);
                 });
+                return;
                 
             } else if (intersectedObject.name === 'experience') {
                 ktx2Loader.load('assets/texture/bigScreenExperience.ktx2', function (texture) {
@@ -907,6 +1043,7 @@ function clickEvent(e) {
                 }, function (e) {
                     console.error(e);
                 });
+                return;
             } else if (intersectedObject.name === 'skill') {
                 ktx2Loader.load('assets/texture/bigScreenSkills.ktx2', function (texture) {
 
@@ -921,15 +1058,18 @@ function clickEvent(e) {
                 }, function (e) {
                     console.error(e);
                 });
-            } else if ((intersectedObject.name === 'vendingMachineScreen' && vendingFlag == 1) || intersectedObject.name === 'back' || (intersectedObject.name === 'arcadeScreen' && creditFlag == 3)) {
+                return;
+            } else if ((intersectedObject.name === 'back1' && vendingFlag == 1) || intersectedObject.name === 'back' || (intersectedObject.name === 'arcadeScreen' && creditFlag == 3)) {
+                console.log('clicked 2');
                 vendingFlag = 0;
                 creditFlag = 0;
+                bigscreenFlag = 0;
                 new TWEEN.Tween(camera.position)
                     .to(
                         {
-                            x: -40,
-                            y: 0,
-                            z: 0,
+                            x: -15,
+                            y: 5,
+                            z: -7,
                         },
                         3000
                     )
@@ -946,7 +1086,7 @@ function clickEvent(e) {
                             y: 3,
                             z: 0,
                         },
-                        3000
+                        2000
                     )
                     .easing(TWEEN.Easing.Cubic.Out)
                     .onUpdate(function () {
@@ -960,7 +1100,7 @@ function clickEvent(e) {
                             minDistance: 8,
                             maxDistance: 16
                         },
-                        2000
+                        1000
                     )
                     .easing(TWEEN.Easing.Cubic.Out)
                     .onUpdate(function () {
