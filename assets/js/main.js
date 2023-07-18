@@ -681,23 +681,8 @@ function clickEvent(e) {
         // Loop through the intersects array to find the object(s) you want to handle
         for (var i = 0; i < 2; i++) {
             var intersectedObject = intersects[i].object;
+            
             if ((intersectedObject.name === 'projectsWhite' || intersectedObject.name === 'projectsRed') || (intersectedObject.name === 'vendingMachineScreen' && vendingFlag == 0) || (intersectedObject.name === 'back1' && vendingFlag == 2)){
-                console.log('clicked 1');
-                vendingFlag = 1;
-                ktx2Loader.load('assets/texture/vendingMachineMenu.ktx2', function (texture) {
-
-                    var material = new THREE.MeshStandardMaterial({ map: texture });
-                    vendingMachineScreen.traverse(texture => {
-                        if (texture.isMesh) {
-                            texture.material = material;
-                        }
-                    })
-
-                }, function () {
-                }, function (e) {
-                    console.error(e);
-                });
-
                 new TWEEN.Tween(camera.position)
                     .to(
                         {
@@ -705,7 +690,7 @@ function clickEvent(e) {
                             y: 0,
                             z: 10,
                         },
-                        3000
+                        2000
                     )
                     .easing(TWEEN.Easing.Cubic.Out)
                     .onUpdate(function () {
@@ -745,11 +730,24 @@ function clickEvent(e) {
                         controls.minDistance = 0;
                     })
                     .start()
-                    ;                
+                    ;
+                vendingFlag = 1;
+                ktx2Loader.load('assets/texture/vendingMachineMenu.ktx2', function (texture) {
+
+                    var material = new THREE.MeshStandardMaterial({ map: texture });
+                    vendingMachineScreen.traverse(texture => {
+                        if (texture.isMesh) {
+                            texture.material = material;
+                        }
+                    })
+
+                }, function () {
+                }, function (e) {
+                    console.error(e);
+                });
                 return;
 
             } else if (intersectedObject.name === 'project1' && vendingFlag == 1) {
-                console.log('clicked project1');
                 vendingFlag = 2;
                 ktx2Loader.load('assets/texture/project1.ktx2', function (texture) {
 
@@ -1060,10 +1058,7 @@ function clickEvent(e) {
                 });
                 return;
             } else if ((intersectedObject.name === 'back1' && vendingFlag == 1) || intersectedObject.name === 'back' || (intersectedObject.name === 'arcadeScreen' && creditFlag == 3)) {
-                console.log('clicked 2');
-                vendingFlag = 0;
-                creditFlag = 0;
-                bigscreenFlag = 0;
+                
                 new TWEEN.Tween(camera.position)
                     .to(
                         {
@@ -1086,7 +1081,7 @@ function clickEvent(e) {
                             y: 3,
                             z: 0,
                         },
-                        2000
+                        3000
                     )
                     .easing(TWEEN.Easing.Cubic.Out)
                     .onUpdate(function () {
@@ -1100,11 +1095,12 @@ function clickEvent(e) {
                             minDistance: 8,
                             maxDistance: 16
                         },
-                        1000
+                        3000
                     )
                     .easing(TWEEN.Easing.Cubic.Out)
                     .onUpdate(function () {
                         controls.update();
+                        controls.enabled = true;
                     })
                     .start()
                     ;
@@ -1147,7 +1143,9 @@ function clickEvent(e) {
                 }, function (e) {
                     console.error(e);
                 });
-                controls.enabled = true;
+                vendingFlag = 0;
+                creditFlag = 0;
+                bigscreenFlag = 0;
             }
         }
     }
