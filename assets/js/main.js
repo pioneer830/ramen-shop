@@ -194,7 +194,6 @@ function init() {
         const floor = shop.getObjectByName("floor", true);
         ktx2Loader.load('assets/texture/floorBaked1024.ktx2', function (texture) {
 
-            // var material = new THREE.MeshStandardMaterial( { map: texture } );
             var material = new THREE.MeshStandardMaterial({ map: texture, transparent: true, opacity: 0.6, roughness: 0.7 });
             floor.traverse(texture => {
                 if (texture.isMesh) {
