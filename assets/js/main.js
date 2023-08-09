@@ -342,7 +342,6 @@ function init() {
 
 
         // neonPink
-        // var neonPinkMaterial = new THREE.MeshStandardMaterial({color: '#7E2B71', shininess: 100});
         var neonPinkMaterial = new THREE.MeshBasicMaterial({ color: '#FDFDFD' });
         neonPinkMaterial.userData.needsBloom = true;
         const neonPink = shop.getObjectByName("neonPink", true);
